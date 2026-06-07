@@ -1,0 +1,67 @@
+# 1. Persistent Storage Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: open-webui-pvc
+  namespace: ai-studio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# 2. Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  namespace: ai-studio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      containers:
+      - name: open-webui
+        image: ghcr.io/open-webui/open-webui:main
+        ports:
+        - containerPort: 8080
+        env:
+        # Link to your internal Ollama service
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama-service.ai-studio.svc.cluster.local:11434"
+        # Enable auth, but keep signups open if you want friends to join
+        - name: WEBUI_AUTH
+          value: "True"
+        - name: ENABLE_SIGNUP
+          value: "True"
+        # Crucial for internal routing via tunnel
+        - name: WEBUI_URL
+          value: "http://open-webui-service.ai-studio.svc.cluster.local:8080"
+        volumeMounts:
+        - name: webui-storage
+          mountPath: /app/backend/data
+      volumes:
+      - name: webui-storage
+        persistentVolumeClaim:
+          claimName: open-webui-pvc
+---
+# 3. Internal Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui-service
+  namespace: ai-studio
+spec:
+  type: ClusterIP
+  selector:
+    app: open-webui
+  ports:
+  - port: 8080
+    targetPort: 8080
