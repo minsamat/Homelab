@@ -1,69 +1,76 @@
+STREAMING_CHUNK:Defining the Kubernetes ConfigMap...
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: homepage-config
-  namespace: ai-studio
+name: homepage-config
+namespace: ai-studio
 data:
-  services.yaml: |
-    - AI Studio:
-        - Open WebUI:
-            icon: open-webui.png
-            href: "https://ai.mukminsamat.my/"
-            description: "Self-hosted AI Interface"
-  settings.yaml: |
-    title: "Mukmin's Homelab"
-    layout:
-      - AI Studio:
-          style: column
-          columns: 1
----
+services.yaml: |
+- AI Studio:
+- Open WebUI:
+icon: open-webui.png
+href: "https://ai.mukminsamat.my/"
+description: "Self-hosted AI Interface"
+settings.yaml: |
+title: "Mukmin's GitOps Command Center" # Changed the title to showcase GitOps!
+layout:
+- AI Studio:
+style: column
+columns: 1
+
+STREAMING_CHUNK:Structuring the Deployment manifest...
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: homepage
-  namespace: ai-studio
+name: homepage
+namespace: ai-studio
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: homepage
-  template:
-    metadata:
-      labels:
-        app: homepage
-    spec:
-      containers:
-      - name: homepage
-        image: ghcr.io/gethomepage/homepage:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: HOMEPAGE_ALLOWED_HOSTS
-          value: "home.mukminsamat.my"
-        volumeMounts:
-        - name: config-services
-          mountPath: /app/config/services.yaml
-          subPath: services.yaml
-        - name: config-settings
-          mountPath: /app/config/settings.yaml
-          subPath: settings.yaml
-      volumes:
-      - name: config-services
-        configMap:
-          name: homepage-config
-      - name: config-settings
-        configMap:
-          name: homepage-config
----
+replicas: 1
+selector:
+matchLabels:
+app: homepage
+template:
+metadata:
+labels:
+app: homepage
+spec:
+containers:
+- name: homepage
+image: ghcr.io/gethomepage/homepage:latest
+ports:
+- containerPort: 3000
+env:
+- name: HOMEPAGE_ALLOWED_HOSTS
+value: "home.mukminsamat.my"
+volumeMounts:
+- name: config-services
+mountPath: /app/config/services.yaml
+subPath: services.yaml
+- name: config-settings
+mountPath: /app/config/settings.yaml
+subPath: settings.yaml
+volumes:
+- name: config-services
+configMap:
+name: homepage-config
+- name: config-settings
+configMap:
+name: homepage-config
+
+STREAMING_CHUNK:Exposing the ClusterIP Service...
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: homepage-service
-  namespace: ai-studio
+name: homepage-service
+namespace: ai-studio
 spec:
-  type: ClusterIP
-  selector:
-    app: homepage
-  ports:
-  - port: 3000
-    targetPort: 3000
+type: ClusterIP
+selector:
+app: homepage
+ports:
+
+port: 3000
+targetPort: 3000
